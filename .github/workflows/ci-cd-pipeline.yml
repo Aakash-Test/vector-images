@@ -1,6 +1,5 @@
 name: CI/CD Pipeline
 
-# Trigger on push and pull requests to main branch
 on:
   push:
     branches:
@@ -112,11 +111,3 @@ jobs:
           echo "Event Name: ${{ github.event_name }}"
           echo "Event Payload:"
           echo "${{ toJson(github.event) }}"
-
-# Optional, for debugging or further flexibility:
-# To handle failures or to run specific steps on failure or success, add a failure handler step
-on_failure: |
-  echo "This is where failure handling logic goes"
-
-on_success: |
-  echo "This is where success handling logic goes"
