@@ -1,0 +1,91 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: e92dcdae80c7452b80d40bca86a75990
+      name: test
+  templates:
+    - uuid: 39ba6ff516d848de81973b3adee5de58
+      template: Correlation-Vector
+      name: Correlation-Vector
+      groups:
+        - name: test
+      items:
+        - uuid: 6ee7530cde35414fa31a295bd15319da
+          name: 'RAW Problem Data'
+          type: EXTERNAL
+          key: 'vu_problem_correlation.py[{$DATABASE.STATUS},{$SERVER.STATUS},{$WEBSERVER.STATUS},{$WEBSITE.STATUS},{$ALB.STATUS},{$API},{$HOST.URL},{HOST.NAME},{$DATABASE},{$SERVER},{$ALB},asg]'
+          delay: 30s
+          value_type: TEXT
+          trends: '0'
+          tags:
+            - tag: component
+              value: correlation
+      discovery_rules:
+        - uuid: 850be858813d410d8cb17c8c5e727577
+          name: 'Corelated Items'
+          type: DEPENDENT
+          key: correlated.host
+          delay: '0'
+          lifetime: 1d
+          item_prototypes:
+            - uuid: 525d5ed5ea944bc48d513f5a0cc0925d
+              name: '{#TYPE} status'
+              type: DEPENDENT
+              key: 'status[{#TYPE}]'
+              delay: '0'
+              value_type: FLOAT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.data[?(@.type==''{#TYPE}'')].status'
+                - type: JSONPATH
+                  parameters:
+                    - '$.[0]'
+              master_item:
+                key: 'vu_problem_correlation.py[{$DATABASE.STATUS},{$SERVER.STATUS},{$WEBSERVER.STATUS},{$WEBSITE.STATUS},{$ALB.STATUS},{$API},{$HOST.URL},{HOST.NAME},{$DATABASE},{$SERVER},{$ALB},asg]'
+              tags:
+                - tag: component
+                  value: correlation
+          master_item:
+            key: 'vu_problem_correlation.py[{$DATABASE.STATUS},{$SERVER.STATUS},{$WEBSERVER.STATUS},{$WEBSITE.STATUS},{$ALB.STATUS},{$API},{$HOST.URL},{HOST.NAME},{$DATABASE},{$SERVER},{$ALB},asg]'
+          lld_macro_paths:
+            - lld_macro: '{#COUNT}'
+              path: $.count
+            - lld_macro: '{#STATUS}'
+              path: $.status
+            - lld_macro: '{#TYPE}'
+              path: $.type
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.data[*]'
+      tags:
+        - tag: component
+          value: correlation
+      macros:
+        - macro: '{$ALB}'
+          value: prd-nres-alb
+        - macro: '{$ALB.STATUS}'
+          value: '1'
+          description: 'Set "1" if the alb is being monitored, and "0" if it is not. This flag indicates the current status of website monitoring.'
+        - macro: '{$API}'
+          value: 76d61d019c7d1196fb4923277e0dac4f09d45ae3b74a1f9e17411706fee23710
+        - macro: '{$DATABASE}'
+          value: prd-nres-oradb
+        - macro: '{$DATABASE.STATUS}'
+          value: '1'
+          description: 'Set "1" if the database is being monitored, and "0" if it is not. This flag indicates the current status of database monitoring.'
+        - macro: '{$HOST.URL}'
+          value: 'https://vector.naturalretreats.com:5121'
+        - macro: '{$SERVER}'
+          value: asg-ip
+        - macro: '{$SERVER.STATUS}'
+          value: '1'
+          description: 'Set "1" if the server is being monitored, and "0" if it is not. This flag indicates the current status of server monitoring.'
+        - macro: '{$WEBSERVER}'
+        - macro: '{$WEBSERVER.STATUS}'
+          value: '0'
+          description: 'Set "1" if the web server is being monitored, and "0" if it is not. This flag indicates the current status of web server monitoring.'
+        - macro: '{$WEBSITE.STATUS}'
+          value: '1'
+          description: 'Set "1" if the website is being monitored, and "0" if it is not. This flag indicates the current status of website monitoring.'
