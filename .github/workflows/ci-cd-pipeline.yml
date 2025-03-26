@@ -1,0 +1,122 @@
+name: CI/CD Pipeline
+
+# Trigger on push and pull requests to main branch
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Job for checking out code, installing dependencies, and running tests
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install Dependencies
+        run: |
+          npm install
+          
+      - name: Run Tests
+        run: |
+          npm test
+          
+      - name: Lint Code
+        run: |
+          npm run lint
+
+  # Job for building the app
+  build-app:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Build the App
+        run: |
+          npm run build
+          
+      - name: Archive Build Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-artifacts
+          path: ./build/
+
+  # Job for deploying the app (only on main branch)
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-app
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Deploy Application
+        run: |
+          echo "Deploying application to production..."
+          # Add deployment commands here, such as SSH, Kubernetes, or cloud deployment
+          # Example: scp -r ./build user@server:/path/to/deploy
+          
+      - name: Post Deployment Status
+        run: |
+          echo "Deployment completed successfully"
+
+  # Job for running a security check
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Run Security Audit
+        run: |
+          npm audit
+          
+  # Job for running custom logs to show detailed information
+  logs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        
+      - name: Show GitHub Action logs
+        run: |
+          echo "Starting the logs output..."
+          echo "Job Details:"
+          echo "--------------------"
+          echo "Branch: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Event Payload:"
+          echo "${{ toJson(github.event) }}"
+
+# Optional, for debugging or further flexibility:
+# To handle failures or to run specific steps on failure or success, add a failure handler step
+on_failure: |
+  echo "This is where failure handling logic goes"
+
+on_success: |
+  echo "This is where success handling logic goes"
