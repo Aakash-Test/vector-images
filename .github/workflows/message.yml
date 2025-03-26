@@ -10,20 +10,48 @@ on:
 
 jobs:
   check-commit-message:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Defines the environment for the job
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    steps:  # List of steps that will be executed in this job
+      - name: Checkout code  # Step 1: Checkout the code from the repository
+        uses: actions/checkout@v3  # Uses the GitHub Actions checkout action
 
-      - name: Check if commit message contains "GitHub"
+      - name: Check if commit message contains "GitHub"  # Step 2: Check if the commit message contains "GitHub"
         id: check-commit-message
         run: |
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"  # Get the commit message
           
-          if [[ "$COMMIT_MSG" == *"GitHub"* ]]; then
+          echo "Commit Message: $COMMIT_MSG"  # Log the commit message for auditing
+          
+          # Check if "GitHub" is in the commit message (case-insensitive)
+          if [[ "${COMMIT_MSG,,}" == *"github"* ]]; then
             echo "✅ Commit message contains 'GitHub'. Workflow successful."
           else
             echo "❌ Commit message does not contain 'GitHub'. Failing workflow."
             exit 1  # Fail the workflow if the message doesn't contain 'GitHub'
+          fi
+
+      - name: Log Commit Details  # Step 3: Log additional commit details (SHA, author, etc.)
+        id: log-commit-info
+        run: |
+          COMMIT_SHA="${{ github.sha }}"  # Get the commit SHA
+          COMMITTER="${{ github.actor }}"  # Get the committer (author)
+          COMMIT_DATE="${{ github.event.head_commit.timestamp }}"  # Get the commit timestamp
+          
+          echo "Commit SHA: $COMMIT_SHA"  # Log the commit SHA
+          echo "Committer: $COMMITTER"  # Log the committer's username
+          echo "Commit Date: $COMMIT_DATE"  # Log the timestamp of the commit
+          echo "These details are logged for auditing purposes."
+
+      - name: Check for Successful Workflow Execution  # Step 4: Ensure workflow status is successful
+        id: workflow-check
+        run: |
+          echo "Checking the status of the workflow..."
+          
+          # Simulate a check (in real use, you could do something more meaningful here)
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "✅ Workflow is successful."
+          else
+            echo "❌ Workflow did not complete successfully."
+            exit 1  # Fail the workflow if it's not successful
           fi
